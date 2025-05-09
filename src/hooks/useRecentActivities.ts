@@ -55,7 +55,7 @@ export const useRecentActivities = () => {
           id: p.id,
           type: 'mensalidade' as const,
           title: 'Mensalidade registrada',
-          description: `${p.student.name} - ${p.month}/${p.year}`,
+          description: `${p.student} - ${p.month}/${p.year}`,
           createdAt: p.created_at
         })) || []),
         ...(games?.map(g => ({

@@ -14,11 +14,11 @@ import {
   LayoutDashboard,
   ClipboardList,
   Award,
-  ChartBar,
   FileSpreadsheet,
   Receipt,
   FileText,
-  LogOut
+  LogOut,
+  BarChart2
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 

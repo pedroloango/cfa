@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Payment, MONTHS } from "@/types/payment";
 import { getLocalData, saveLocalData } from "@/utils/localStorage";
@@ -108,7 +107,7 @@ export const usePayments = () => {
         }
         
         const payment: Payment = {
-          id: newId++,
+          id: Math.random(),
           studentId: Number(student.id),
           student: student.name,
           category: student.category,
@@ -117,7 +116,10 @@ export const usePayments = () => {
           status: status,
           paymentMethod: "PIX",
           month: MONTHS[month],
-          year: currentYear.toString()
+          year: currentYear.toString(),
+          description: "",
+          paymentTypeId: 1,
+          paymentType: "Mensalidade"
         };
         
         allPayments.push(payment);

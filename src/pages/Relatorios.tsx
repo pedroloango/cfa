@@ -52,7 +52,8 @@ const Relatorios = () => {
 
   // Calculate distribution by age category
   const ageCategories = students.reduce((acc, student) => {
-    const age = new Date().getFullYear() - new Date(student.birthDate).getFullYear();
+    if (!student.birthDate) return acc; // Garante que birthDate existe
+    const age = new Date().getFullYear() - new Date(student.birthDate as string).getFullYear();
     let category = "Outros";
     
     if (age < 6) category = "Sub-6";
@@ -224,9 +225,9 @@ const Relatorios = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip formatter={(value) => [`R$ ${value}`, 'Receita']} />
+                      <Tooltip formatter={(value: number) => [`R$ ${value}`, 'Receita']} />
                       <Legend />
-                      <Bar dataKey="receita" fill="#0D9F4F" name="Receita (R$)" label={{ position: 'top', formatter: (value) => `R$ ${value}` }} />
+                      <Bar dataKey="receita" fill="#0D9F4F" name="Receita (R$)" label={{ position: 'top', formatter: (value: number) => `R$ ${value}` }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -248,9 +249,9 @@ const Relatorios = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip formatter={(value) => [`R$ ${value}`, 'Receita']} />
+                      <Tooltip formatter={(value: number) => [`R$ ${value}`, 'Receita']} />
                       <Legend />
-                      <Bar dataKey="value" fill="#0D9F4F" name="Valor (R$)" label={{ position: 'top', formatter: (value) => `R$ ${value}` }} />
+                      <Bar dataKey="value" fill="#0D9F4F" name="Valor (R$)" label={{ position: 'top', formatter: (value: number) => `R$ ${value}` }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -272,9 +273,9 @@ const Relatorios = () => {
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" />
                       <YAxis />
-                      <Tooltip formatter={(value) => [`R$ ${value}`, 'Receita']} />
+                      <Tooltip formatter={(value: number) => [`R$ ${value}`, 'Receita']} />
                       <Legend />
-                      <Bar dataKey="receita" fill="#0D9F4F" name="Receita (R$)" label={{ position: 'top', formatter: (value) => `R$ ${value}` }} />
+                      <Bar dataKey="receita" fill="#0D9F4F" name="Receita (R$)" label={{ position: 'top', formatter: (value: number) => `R$ ${value}` }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -313,7 +314,7 @@ const Relatorios = () => {
                   <CardHeader>
                     <CardTitle>{category.name}</CardTitle>
                     <CardDescription>
-                      {category.value} alunos ({((category.value / totalStudents) * 100).toFixed(1)}% do total)
+                      {(category.value as number)} alunos ({(((category.value as number) / totalStudents) * 100).toFixed(1)}% do total)
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -324,7 +325,7 @@ const Relatorios = () => {
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground">Receita mensal</p>
-                        <p className="text-2xl font-bold">R$ {category.value * 150},00</p>
+                        <p className="text-2xl font-bold">R$ {(category.value as number) * 150},00</p>
                       </div>
                     </div>
                   </CardContent>

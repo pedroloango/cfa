@@ -25,20 +25,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { 
-  Goal, 
-  ShieldAlert, 
-  HandPlatter, 
-  Shield, 
-  X, 
-  Clock,
-  ArrowLeft,
-  UserPlus,
+  Timer,
   Flag,
-  Calendar,
-  RefreshCcw,
+  Goal,
+  Shield,
+  ShieldAlert,
   Target,
   Check,
-  Users
+  X,
+  RefreshCcw,
+  Users,
+  Shirt,
+  FileText,
+  UserPlus,
+  Calendar,
+  ArrowLeft,
+  Clock
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
@@ -53,7 +55,6 @@ import { getStoredPlayers, savePlayers } from "@/components/scout/playerStorage"
 import { getStoredMatches, saveMatches, getCurrentMatch, setCurrentMatch, getMatchPlayers, saveMatchPlayers } from "@/components/scout/matchStorage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getStoredStudents } from "@/components/students/studentStorage";
-import { FileText } from "lucide-react";
 
 const Scout = () => {
   const [players, setPlayers] = useState<Player[]>([]);
@@ -272,7 +273,7 @@ const Scout = () => {
       case "goal": 
         return <Goal className="h-4 w-4 text-green-500" />;
       case "assistencia": 
-        return <HandPlatter className="h-4 w-4 text-blue-500" />;
+        return <Target className="h-4 w-4 text-blue-500" />;
       case "desarme": 
         return <Shield className="h-4 w-4 text-yellow-500" />;
       case "golSofrido": 

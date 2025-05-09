@@ -1,18 +1,29 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ScoutActionType, ActionRequiringLocation } from "./types";
+import { ScoutActionType } from "./types";
 import { 
   Goal, 
   Shield, 
-  HandPlatter, 
   ShieldAlert, 
   Flag, 
   Target, 
   Check, 
-  X 
+  X,
+  Minus,
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+  Timer,
+  Shirt
 } from "lucide-react";
+
+interface ActionType {
+  id: string;
+  label: string;
+  icon: React.ReactNode;
+  requiresLocation: boolean;
+}
 
 interface ActionButtonsProps {
   disabled: boolean;
@@ -27,75 +38,48 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({
 }) => {
   const isSelected = (action: ScoutActionType) => selectedAction === action;
   
-  const actionButtons = [
-    { 
-      type: "goal" as ScoutActionType, 
-      label: "GOL", 
-      icon: <Goal className="mr-2 h-4 w-4" />, 
-      color: "bg-green-500 hover:bg-green-600", 
-      requiresLocation: true 
+  const actions: ActionType[] = [
+    {
+      id: "goal",
+      label: "Gol",
+      icon: <Goal className="mr-2 h-4 w-4" />,
+      requiresLocation: true,
     },
-    { 
-      type: "chuteGol" as ScoutActionType, 
-      label: "CHUTE A GOL", 
-      icon: <Target className="mr-2 h-4 w-4" />, 
-      color: "bg-purple-500 hover:bg-purple-600", 
-      requiresLocation: true 
+    {
+      id: "assist",
+      label: "Assistência",
+      icon: <Target className="mr-2 h-4 w-4" />,
+      requiresLocation: true,
     },
-    { 
-      type: "falta" as ScoutActionType, 
-      label: "FALTAS", 
-      icon: <Flag className="mr-2 h-4 w-4" />, 
-      color: "bg-yellow-500 hover:bg-yellow-600", 
-      requiresLocation: true 
+    {
+      id: "shot",
+      label: "Chute",
+      icon: <Target className="mr-2 h-4 w-4" />,
+      requiresLocation: true,
     },
-    { 
-      type: "passeCerto" as ScoutActionType, 
-      label: "PASSE CERTO", 
-      icon: <Check className="mr-2 h-4 w-4" />, 
-      color: "bg-blue-500 hover:bg-blue-600", 
-      requiresLocation: false 
+    {
+      id: "save",
+      label: "Defesa",
+      icon: <Shield className="mr-2 h-4 w-4" />,
+      requiresLocation: true,
     },
-    { 
-      type: "passeErrado" as ScoutActionType, 
-      label: "PASSE ERRADO", 
-      icon: <X className="mr-2 h-4 w-4" />, 
-      color: "bg-red-500 hover:bg-red-600", 
-      requiresLocation: false 
-    },
-    { 
-      type: "assistencia" as ScoutActionType, 
-      label: "ASSISTÊNCIA", 
-      icon: <HandPlatter className="mr-2 h-4 w-4" />, 
-      color: "bg-blue-500 hover:bg-blue-600", 
-      requiresLocation: false 
-    },
-    { 
-      type: "desarme" as ScoutActionType, 
-      label: "DESARME", 
-      icon: <Shield className="mr-2 h-4 w-4" />, 
-      color: "bg-purple-500 hover:bg-purple-600", 
-      requiresLocation: true 
-    },
-    { 
-      type: "golSofrido" as ScoutActionType, 
-      label: "GOL SOFRIDO", 
-      icon: <ShieldAlert className="mr-2 h-4 w-4" />, 
-      color: "bg-red-700 hover:bg-red-800", 
-      requiresLocation: false 
-    },
+    {
+      id: "foul",
+      label: "Falta",
+      icon: <X className="mr-2 h-4 w-4" />,
+      requiresLocation: true,
+    }
   ];
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 w-full mx-auto">
-      {actionButtons.map(button => (
+      {actions.map(button => (
         <Button
-          key={button.type}
-          onClick={() => onAction(button.type)}
+          key={button.id}
+          onClick={() => onAction(button.id as ScoutActionType)}
           className={cn(
-            button.color, 
-            "text-white",
-            isSelected(button.type) && "ring-2 ring-yellow-400 ring-offset-2"
+            "bg-green-500 hover:bg-green-600 text-white",
+            isSelected(button.id as ScoutActionType) && "ring-2 ring-yellow-400 ring-offset-2"
           )}
           disabled={disabled}
         >
