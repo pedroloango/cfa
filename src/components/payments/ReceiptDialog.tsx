@@ -76,7 +76,7 @@ export function ReceiptDialog({ open, onClose, payment }: ReceiptDialogProps) {
 
     try {
       const canvas = await html2canvas(receiptRef.current, {
-        background: '#ffffff',
+       
         logging: false,
       });
 
