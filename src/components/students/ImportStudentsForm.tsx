@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,24 +11,22 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { useToast } from "@/components/ui/use-toast";
 import { Download, Upload } from "lucide-react";
 import * as XLSX from 'xlsx';
 import { Student } from "./StudentForm";
 
 interface ImportStudentsFormProps {
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
   onImport: (students: Omit<Student, 'id'>[]) => void;
 }
 
-export function ImportStudentsForm({
-  open,
+export const ImportStudentsForm: React.FC<ImportStudentsFormProps> = ({
+  isOpen,
   onClose,
   onImport,
-}: ImportStudentsFormProps) {
+}) => {
   const [file, setFile] = useState<File | null>(null);
-  const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -65,11 +64,7 @@ export function ImportStudentsForm({
 
   const handleImport = () => {
     if (!file) {
-      toast({
-        title: "Erro",
-        description: "Selecione um arquivo para importar.",
-        variant: "destructive",
-      });
+      toast.error("Selecione um arquivo para importar.");
       return;
     }
 
@@ -101,25 +96,24 @@ export function ImportStudentsForm({
           age: 0 // Será calculado automaticamente
         }));
 
-        onImport(students);
-        toast({
-          title: "Sucesso",
-          description: `${students.length} alunos importados com sucesso.`,
-        });
+        // Validação básica: nome e categoria obrigatórios
+        const validStudents = students.filter(s => s.name && s.category);
+        if (validStudents.length !== students.length) {
+          toast.error(`Alguns alunos foram ignorados por falta de nome ou categoria. Importados: ${validStudents.length}/${students.length}`);
+        }
+
+        onImport(validStudents);
+        toast.success(`${validStudents.length} alunos importados com sucesso.`);
         onClose();
       } catch (error) {
-        toast({
-          title: "Erro",
-          description: "Erro ao processar o arquivo. Verifique se o formato está correto.",
-          variant: "destructive",
-        });
+        toast.error("Erro ao processar o arquivo. Verifique se o formato está correto.");
       }
     };
     reader.readAsArrayBuffer(file);
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Importar Alunos</DialogTitle>
@@ -153,7 +147,7 @@ export function ImportStudentsForm({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleImport}>
+          <Button onClick={handleImport} disabled={!file}>
             <Upload className="mr-2 h-4 w-4" />
             Importar
           </Button>
@@ -161,4 +155,4 @@ export function ImportStudentsForm({
       </DialogContent>
     </Dialog>
   );
-} 
+}; 
