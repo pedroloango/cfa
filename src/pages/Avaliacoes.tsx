@@ -138,12 +138,18 @@ const Avaliacoes = () => {
         throw new Error("Aluno não selecionado");
       }
 
-      // Get the current user from localStorage
-      const userStr = localStorage.getItem('user');
-      if (!userStr) {
-        throw new Error("Usuário não autenticado");
+      // Get the current authenticated user's ID from Supabase Auth
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        toast({
+          title: "Erro de Autenticação",
+          description: "Não foi possível obter o usuário autenticado. Faça login novamente.",
+          variant: "destructive",
+        });
+        console.error('Auth Error:', authError);
+        return;
       }
-      const user = JSON.parse(userStr);
 
       const evaluationData = {
         student_id: evaluation.student.id,
@@ -153,7 +159,7 @@ const Avaliacoes = () => {
         physical: evaluation.physical,
         mental: evaluation.mental,
         notes: evaluation.notes,
-        created_by: user.id
+        created_by: authUser.id // Usar o ID do Supabase Auth
       };
 
       let error;
@@ -173,22 +179,28 @@ const Avaliacoes = () => {
       }
 
       if (error) {
-        console.error('Error details:', error);
-        throw new Error(error.message || 'Erro ao salvar avaliação');
+        console.error('Error details:', error); // Manter para debug
+        // Tentar fornecer uma mensagem de erro mais específica se for FK violation
+        if (error.message.includes('evaluations_created_by_fkey')) {
+            throw new Error("Erro de chave estrangeira: O usuário criador não é válido.");
+        } else if (error.message.includes('evaluations_student_id_fkey')) {
+            throw new Error("Erro de chave estrangeira: O aluno selecionado não é válido.");
+        }
+        throw new Error(error.message || 'Erro ao salvar avaliação no banco de dados.');
       }
 
       await loadEvaluations();
-        setIsEvaluationModalOpen(false);
+      setIsEvaluationModalOpen(false);
       setSelectedEvaluation(null);
       toast({
         title: "Sucesso",
         description: `Avaliação ${evaluation.id ? 'atualizada' : 'criada'} com sucesso!`,
       });
-    } catch (error) {
+    } catch (error: any) { // Especificar o tipo de error como any ou unknown
       console.error('Error saving evaluation:', error);
       toast({
         title: "Erro ao salvar avaliação",
-        description: error instanceof Error ? error.message : "Não foi possível salvar a avaliação. Tente novamente.",
+        description: error.message || "Não foi possível salvar a avaliação. Tente novamente.",
         variant: "destructive",
       });
     }
@@ -272,7 +284,7 @@ const Avaliacoes = () => {
 
   const handleSaveAttendance = async (record: AttendanceRecord) => {
     try {
-      const { data: attendanceRecord, error: recordError } = await supabase
+      const { data: newAttendanceRecord, error: recordError } = await supabase
         .from('attendance_records')
         .insert([{
           date: record.date.toISOString(),
@@ -283,16 +295,16 @@ const Avaliacoes = () => {
 
       if (recordError) throw recordError;
 
-      if (attendanceRecord) {
-        const details = record.details.map(detail => ({
-          attendance_record_id: attendanceRecord.id,
-          student_id: detail.student.id,
+      if (newAttendanceRecord) {
+        const detailsToInsert = record.records.map(detail => ({
+          attendance_record_id: newAttendanceRecord.id,
+          student_id: detail.studentId,
           present: detail.present
         }));
 
         const { error: detailsError } = await supabase
           .from('attendance_details')
-          .insert(details);
+          .insert(detailsToInsert);
 
         if (detailsError) throw detailsError;
 

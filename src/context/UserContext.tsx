@@ -1,52 +1,73 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { User } from '@/types/user';
+import React, { createContext, useState, useEffect, ReactNode } from 'react';
+// import { User } from '@/types/user'; // Remover esta importação para evitar conflito
 
-interface UserContextType {
-  user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+// Definir e exportar a interface User diretamente aqui
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string; // Senha é opcional, pois não será armazenada no contexto após o login seguro
+  role: string;
+  permissions: string[];
 }
 
-export const UserContext = createContext<UserContextType>({
+export interface UserContextType {
+  user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  logout: () => void;
+  isLoading: boolean; 
+}
+
+const defaultState: UserContextType = {
   user: null,
   setUser: () => {},
-});
+  logout: () => {},
+  isLoading: true, 
+};
 
-export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      console.log('UserProvider - Initial stored user:', storedUser);
-      if (storedUser) {
-        const parsedUser = JSON.parse(storedUser);
-        console.log('UserProvider - Parsed stored user:', parsedUser);
-        return parsedUser;
-      }
-    } catch (error) {
-      console.error('UserProvider - Error loading stored user:', error);
-      localStorage.removeItem('user');
-    }
-    return null;
-  });
+export const UserContext = createContext<UserContextType>(defaultState);
+
+export const UserProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    console.log('UserProvider - User state changed:', user);
+    // Tenta carregar o usuário do localStorage ou de uma sessão Supabase ao iniciar
+    // Esta parte pode ser ajustada conforme a lógica de sessão do Supabase
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser: User = JSON.parse(storedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse user from localStorage", error);
+        localStorage.removeItem('user'); // Limpa item inválido
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  const logout = () => {
+    // Lógica de logout: limpar Supabase Auth, localStorage e estado do contexto
+    // Exemplo: await supabase.auth.signOut();
+    localStorage.removeItem('user');
+    setUser(null);
+    // Idealmente, redirecionar para a página de login aqui
+    // navigate('/login'); // Se o navigate estiver disponível neste escopo
+  };
+
+  // Atualiza o localStorage quando o usuário mudar
+  // REMOVER SE O SUPABASE GERENCIA A SESSÃO AUTOMATICAMENTE
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
   }, [user]);
 
-  const contextValue = React.useMemo(() => ({
-    user,
-    setUser: (newUser: User | null) => {
-      console.log('UserProvider - Setting new user:', newUser);
-      if (newUser) {
-        localStorage.setItem('user', JSON.stringify(newUser));
-      } else {
-        localStorage.removeItem('user');
-      }
-      setUser(newUser);
-    },
-  }), [user]);
-
   return (
-    <UserContext.Provider value={contextValue}>
+    <UserContext.Provider value={{ user, setUser, logout, isLoading }}>
       {children}
     </UserContext.Provider>
   );

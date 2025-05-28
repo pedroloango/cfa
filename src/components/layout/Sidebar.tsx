@@ -35,6 +35,7 @@ const menuItems = [
   { path: "/relatorio-jogos", label: "Relatório de Jogos", icon: FileSpreadsheet },
   { path: "/relatorios", label: "Relatórios", icon: FileText },
   { path: "/receitas", label: "Receitas", icon: Receipt },
+  { path: "/atividades", label: "Atividades", icon: ClipboardList },
   { path: "/configuracoes", label: "Configurações", icon: Settings },
 ];
 

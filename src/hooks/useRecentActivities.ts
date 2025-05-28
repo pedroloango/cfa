@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabaseClient';
+import { CompetitionGame } from '@/components/activities/CompetitionGameForm';
 
 interface RecentActivity {
   id: string;
@@ -11,38 +12,53 @@ interface RecentActivity {
 
 interface Event {
   id: string;
-  type: 'treino' | 'jogo' | 'avaliacao';
+  type: 'jogo';
   title: string;
   date: string;
   time: string;
+  category?: string;
+  location?: string;
 }
+
+// Interface para os dados brutos da tabela competition_games como eles vêm do Supabase
+interface RawCompetitionGame {
+  id: string;
+  championship_name: string;
+  category: string;
+  game_date: string;
+  game_time: string;
+  location: string;
+}
+
+const formatDate = (dateString: string | Date): string => {
+  const dateObj = new Date(dateString + 'T00:00:00');
+  return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+};
+
+const formatTime = (timeString: string): string => {
+  if (timeString && timeString.includes(':')) {
+    const parts = timeString.split(':');
+    return `${parts[0]}:${parts[1]}`;
+  }
+  return timeString;
+};
 
 export const useRecentActivities = () => {
   return useQuery({
-    queryKey: ['recent-activities'],
+    queryKey: ['recent-activities-and-upcoming-events'],
     queryFn: async () => {
-      // Buscar matrículas recentes
       const { data: enrollments } = await supabase
         .from('students')
         .select('id, name, category, created_at')
         .order('created_at', { ascending: false })
         .limit(3);
 
-      // Buscar pagamentos recentes
       const { data: payments } = await supabase
         .from('payments')
-        .select('id, student:student_id(name), month, year, created_at')
+        .select('id, student_id(name), description, created_at')
         .order('created_at', { ascending: false })
         .limit(3);
 
-      // Buscar jogos recentes
-      const { data: games } = await supabase
-        .from('games')
-        .select('id, category, opponent, created_at')
-        .order('created_at', { ascending: false })
-        .limit(3);
-
-      // Formatar atividades recentes
       const activities: RecentActivity[] = [
         ...(enrollments?.map(e => ({
           id: e.id,
@@ -54,74 +70,47 @@ export const useRecentActivities = () => {
         ...(payments?.map(p => ({
           id: p.id,
           type: 'mensalidade' as const,
-          title: 'Mensalidade registrada',
-          description: `${p.student} - ${p.month}/${p.year}`,
+          title: p.description ? 'Pagamento Registrado' : 'Mensalidade registrada',
+          description: p.description || `${(p.student_id as any)?.name || 'Aluno não identificado'}`,
           createdAt: p.created_at
-        })) || []),
-        ...(games?.map(g => ({
-          id: g.id,
-          type: 'jogo' as const,
-          title: 'Jogo agendado',
-          description: `${g.category} vs ${g.opponent}`,
-          createdAt: g.created_at
         })) || [])
       ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, 3);
+        .slice(0, 5);
 
-      // Buscar próximos eventos
       const today = new Date();
-      const nextWeek = new Date();
-      nextWeek.setDate(today.getDate() + 7);
+      today.setHours(0, 0, 0, 0);
+      const fifteenDaysLater = new Date(today);
+      fifteenDaysLater.setDate(today.getDate() + 15);
 
-      const { data: upcomingGames } = await supabase
-        .from('games')
-        .select('*')
-        .gte('date', today.toISOString())
-        .lte('date', nextWeek.toISOString())
-        .order('date', { ascending: true });
+      console.log("Dashboard/Eventos - Data Início Filtro:", today.toISOString().split('T')[0]);
+      console.log("Dashboard/Eventos - Data Fim Filtro:", fifteenDaysLater.toISOString().split('T')[0]);
 
-      const { data: upcomingTrainings } = await supabase
-        .from('trainings')
-        .select('*')
-        .gte('date', today.toISOString())
-        .lte('date', nextWeek.toISOString())
-        .order('date', { ascending: true });
+      const { data: upcomingCompetitionGames, error: gamesError } = await supabase
+        .from('competition_games')
+        .select('id, championship_name, category, game_date, game_time, location')
+        .gte('game_date', today.toISOString().split('T')[0])
+        .lte('game_date', fifteenDaysLater.toISOString().split('T')[0])
+        .order('game_date', { ascending: true })
+        .order('game_time', { ascending: true });
 
-      const { data: upcomingEvaluations } = await supabase
-        .from('evaluations')
-        .select('*')
-        .gte('date', today.toISOString())
-        .lte('date', nextWeek.toISOString())
-        .order('date', { ascending: true });
+      if (gamesError) {
+        console.error('Erro ao buscar competition_games:', gamesError);
+      }
+      
+      console.log("Dashboard/Eventos - Jogos Brutos Recebidos:", upcomingCompetitionGames);
+      console.log("Dashboard/Eventos - Erro na Busca:", gamesError);
+      
+      const events: Event[] = (upcomingCompetitionGames as RawCompetitionGame[] || []).map(game => ({
+        id: game.id!,
+        type: 'jogo' as const,
+        title: game.championship_name,
+        date: formatDate(game.game_date),
+        time: formatTime(game.game_time),
+        category: game.category,
+        location: game.location,
+      })).slice(0, 5);
 
-      // Formatar próximos eventos
-      const events: Event[] = [
-        ...(upcomingTrainings?.map(t => ({
-          id: t.id,
-          type: 'treino' as const,
-          title: `Treino ${t.category}`,
-          date: new Date(t.date).toLocaleDateString('pt-BR'),
-          time: new Date(t.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        })) || []),
-        ...(upcomingGames?.map(g => ({
-          id: g.id,
-          type: 'jogo' as const,
-          title: `Jogo ${g.category}`,
-          date: new Date(g.date).toLocaleDateString('pt-BR'),
-          time: new Date(g.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        })) || []),
-        ...(upcomingEvaluations?.map(e => ({
-          id: e.id,
-          type: 'avaliacao' as const,
-          title: 'Avaliação Física',
-          date: new Date(e.date).toLocaleDateString('pt-BR'),
-          time: new Date(e.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-        })) || [])
-      ].sort((a, b) => {
-        const dateA = new Date(`${a.date} ${a.time}`);
-        const dateB = new Date(`${b.date} ${b.time}`);
-        return dateA.getTime() - dateB.getTime();
-      }).slice(0, 3);
+      console.log("Dashboard/Eventos - Eventos Formatados:", events);
 
       return {
         activities,

@@ -104,13 +104,14 @@ export function EvaluationForm({
     onSave(evaluation);
   };
 
-  const filteredStudents = categoryFilter === "all"
+  const filteredStudents = (categoryFilter === "all"
     ? studentsList
-    : studentsList.filter(s => s.category === categoryFilter);
+    : studentsList.filter(s => s.category === categoryFilter))
+    .sort((a, b) => a.name.localeCompare(b.name));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {initialData ? "Editar Avaliação" : "Nova Avaliação"}
@@ -121,8 +122,8 @@ export function EvaluationForm({
               : "Preencha os dados para criar uma nova avaliação."}
           </DialogDescription>
         </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+        <div className="flex-grow overflow-y-auto pr-6 pl-1 py-4 grid gap-4">
+          <div className="space-y-2">
             <Label>Categoria</Label>
             <Select
               value={categoryFilter}
@@ -157,9 +158,9 @@ export function EvaluationForm({
                   <SelectValue placeholder="Selecione o aluno" />
                 </SelectTrigger>
                 <SelectContent>
-                {filteredStudents.map((student) => (
-                  <SelectItem key={student.id} value={student.id.toString()}>
-                    {student.name} - {student.category}
+                {filteredStudents.map((studentItem) => (
+                  <SelectItem key={studentItem.id} value={studentItem.id.toString()}>
+                    {studentItem.name} - {studentItem.category}
                   </SelectItem>
                   ))}
                 </SelectContent>
@@ -182,7 +183,7 @@ export function EvaluationForm({
                 <Calendar
                   mode="single"
                   selected={date}
-                  onSelect={(date) => date && setDate(date)}
+                  onSelect={(d) => d && setDate(d)}
                   initialFocus
                 />
               </PopoverContent>
@@ -250,22 +251,20 @@ export function EvaluationForm({
               </div>
               
           <div className="space-y-2">
-            <Label>Observações</Label>
+            <Label htmlFor="notes">Observações</Label>
             <Textarea
+              id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Digite as observações da avaliação..."
+              placeholder="Observações adicionais sobre a avaliação"
+              rows={4}
             />
             </div>
-          </div>
-          <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-              Cancelar
-            </Button>
-          <Button onClick={handleSave} disabled={!selectedStudent}>
-            Salvar
-            </Button>
-          </DialogFooter>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={handleSave}>Salvar Avaliação</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

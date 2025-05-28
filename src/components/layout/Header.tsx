@@ -1,4 +1,3 @@
-
 import { Bell, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +8,7 @@ interface HeaderProps {
 
 export function Header({ children }: HeaderProps) {
   return (
-    <header className="border-b bg-card h-16 flex items-center px-4 md:px-6 sticky top-0 z-30">
+    <header className="border-b bg-primary h-16 flex items-center px-4 md:px-6 sticky top-0 z-30">
       <div className="flex items-center">
         {children}
       </div>

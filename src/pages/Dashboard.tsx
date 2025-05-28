@@ -1,16 +1,51 @@
 import { MainLayout } from "@/components/layout/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, TrendingUp, Gift } from "lucide-react";
+import { Users, CreditCard, TrendingUp, Gift, CalendarDays, MapPin } from "lucide-react";
 import { useDbDashboard } from "@/hooks/useDbDashboard";
 import { useRecentActivities } from "@/hooks/useRecentActivities";
+import { useStudents } from "@/hooks/useStudents";
+import { useMemo } from "react";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 const Dashboard = () => {
   const { data: dashboardData, isLoading: isDashboardLoading } = useDbDashboard();
   const { data: activitiesData, isLoading: isActivitiesLoading } = useRecentActivities();
+  const { data: studentsData, isLoading: isStudentsLoading } = useStudents();
 
-  if (isDashboardLoading || isActivitiesLoading) {
+  const upcomingBirthdays = useMemo(() => {
+    if (!studentsData) return [];
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const upcoming = [];
+
+    for (let i = 0; i < 7; i++) {
+      const targetDate = new Date(today);
+      targetDate.setDate(today.getDate() + i);
+      const targetDay = targetDate.getDate();
+      const targetMonth = targetDate.getMonth() + 1;
+
+      studentsData.forEach(student => {
+        if (student.birthDate && student.status === 'Ativo') {
+          const [birthYear, birthMonth, birthDay] = student.birthDate.split('-').map(Number);
+          if (birthDay === targetDay && birthMonth === targetMonth) {
+            if (!upcoming.find(s => s.id === student.id)) {
+              upcoming.push(student);
+            }
+          }
+        }
+      });
+    }
+    return upcoming.sort((a, b) => {
+      const [_aYear, aMonth, aDay] = a.birthDate.split('-').map(Number);
+      const [_bYear, bMonth, bDay] = b.birthDate.split('-').map(Number);
+      if (aMonth !== bMonth) return aMonth - bMonth;
+      return aDay - bDay;
+    });
+  }, [studentsData]);
+
+  if (isDashboardLoading || isActivitiesLoading || isStudentsLoading) {
     return (
       <MainLayout>
         <div className="p-6">
@@ -20,9 +55,8 @@ const Dashboard = () => {
     );
   }
 
-  const { stats, birthdays } = dashboardData || {
+  const { stats } = dashboardData || {
     stats: { total: 0, paying: 0, scholars: 0, totalPaid: 0 },
-    birthdays: []
   };
 
   const { activities, events } = activitiesData || {
@@ -82,7 +116,7 @@ const Dashboard = () => {
               <Gift className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{birthdays.length}</div>
+              <div className="text-2xl font-bold">{upcomingBirthdays.length}</div>
               <p className="text-xs text-muted-foreground">
                 Nos próximos 7 dias
               </p>
@@ -139,14 +173,15 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {birthdays.map(student => (
+                {upcomingBirthdays.map(student => (
                   <div key={student.id} className="flex justify-between items-start">
                     <div>
                       <p className="font-medium">{student.name}</p>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(student.birthDate).toLocaleDateString('pt-BR', {
+                        {new Date(student.birthDate + 'T00:00:00Z').toLocaleDateString('pt-BR', {
                           day: 'numeric',
-                          month: 'long'
+                          month: 'long',
+                          timeZone: 'UTC'
                         })}
                       </p>
                     </div>
@@ -155,7 +190,7 @@ const Dashboard = () => {
                     </div>
                   </div>
                 ))}
-                {birthdays.length === 0 && (
+                {upcomingBirthdays.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center">
                     Nenhum aniversário nos próximos 7 dias
                   </p>
@@ -171,22 +206,28 @@ const Dashboard = () => {
             <CardContent>
               <div className="space-y-4">
                 {events.map(event => (
-                  <div key={event.id} className="flex justify-between items-start">
-                    <div>
-                      <p className="font-medium">{event.title}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {event.date === new Date().toLocaleDateString('pt-BR')
-                          ? `Hoje, ${event.time}`
-                          : event.date === new Date(Date.now() + 86400000).toLocaleDateString('pt-BR')
-                          ? `Amanhã, ${event.time}`
-                          : `${event.date}, ${event.time}`}
-                      </p>
+                  <div key={event.id} className="p-3 bg-gray-50 rounded-md shadow-sm">
+                    <p className="font-semibold text-football-dark-green">{event.title}</p>
+                    <div className="text-sm text-gray-600 mt-1 space-y-1">
+                      <div className="flex items-center">
+                        <CalendarDays className="h-4 w-4 mr-2 text-gray-500" />
+                        <span>{event.date} às {event.time}</span>
+                      </div>
+                      {event.category && (
+                        <p className="text-xs"><span className="font-medium">Categoria:</span> {event.category}</p>
+                      )}
+                      {event.location && (
+                        <div className="flex items-center text-xs">
+                          <MapPin className="h-3 w-3 mr-1.5 text-gray-500 flex-shrink-0" />
+                          <span>{event.location}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
                 {events.length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Nenhum evento próximo
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Nenhum evento nos próximos 15 dias.
                   </p>
                 )}
               </div>

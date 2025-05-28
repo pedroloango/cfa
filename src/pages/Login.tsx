@@ -1,11 +1,12 @@
 import { useState, useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
-import { UserContext } from "@/context/UserContext";
+import { UserContext, User } from "@/context/UserContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -13,96 +14,111 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, setUser } = useContext(UserContext);
+  const { setUser } = useContext(UserContext);
 
-  // Debug: Monitorar mudanças no contexto do usuário
   useEffect(() => {
-    console.log('UserContext atualizado:', user);
-  }, [user]);
+    const checkUserSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('id, full_name, email, role, permissions')
+          .eq('id', session.user.id)
+          .single();
+        if (userProfile && !profileError) {
+          setUser({
+            id: userProfile.id,
+            name: userProfile.full_name,
+            email: userProfile.email,
+            role: userProfile.role || 'user',
+            password: '',
+            permissions: Array.isArray(userProfile.permissions) ? userProfile.permissions : [],
+          } as User);
+          navigate("/dashboard", { replace: true });
+        } else {
+          await supabase.auth.signOut();
+        }
+      }
+    };
+  }, [navigate, setUser]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log('Iniciando processo de login...');
 
     try {
-      console.log('Consultando banco de dados...');
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, full_name, email, role, permissions')
-        .eq('email', email)
-        .eq('password', password)
-        .single();
+      const { data: authResponse, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
 
-      console.log('Resposta do Supabase:', { data, error });
-
-      if (error || !data) {
-        console.error('Erro na autenticação:', error);
-        toast({ 
+      if (signInError) {
+        console.error("Erro na autenticação Supabase:", signInError);
+        toast({
           variant: "destructive",
-          title: "Erro",
-          description: "Credenciais inválidas."
+          title: "Erro de Login",
+          description: signInError.message === "Invalid login credentials" 
+            ? "Credenciais inválidas. Verifique seu email e senha."
+            : signInError.message || "Ocorreu um erro ao tentar fazer login.",
         });
         setIsLoading(false);
         return;
       }
 
-      // Garantir que permissions é um array
-      const permissions = Array.isArray(data.permissions) ? data.permissions : [];
-      console.log('Permissões do usuário:', permissions);
+      if (authResponse.user && authResponse.session) {
+        const { data: userProfile, error: profileError } = await supabase
+          .from('users')
+          .select('id, full_name, email, role, permissions')
+          .eq('id', authResponse.user.id)
+          .single();
 
-      // Salvar dados do usuário no contexto e localStorage
-      const userData = {
-        id: data.id,
-        name: data.full_name,
-        email: data.email,
-        password: password,
-        role: data.role || 'user',
-        permissions: permissions
-      };
-      
-      console.log('Dados do usuário preparados:', userData);
+        if (profileError) {
+          console.error("Erro ao buscar perfil do usuário após login:", profileError);
+          await supabase.auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "Erro de Login",
+            description: "Não foi possível carregar os dados do seu perfil. Tente novamente.",
+          });
+          setIsLoading(false);
+          return;
+        }
 
-      // Primeiro salvar no localStorage
-      try {
-        localStorage.setItem('user', JSON.stringify(userData));
-        console.log('Dados salvos no localStorage');
-      } catch (storageError) {
-        console.error('Erro ao salvar no localStorage:', storageError);
-      }
-      
-      // Depois atualizar o contexto
-      console.log('Atualizando contexto do usuário...');
-      setUser(userData);
+        if (userProfile) {
+          const userDataForContext: User = {
+            id: userProfile.id,
+            name: userProfile.full_name,
+            email: userProfile.email,
+            role: userProfile.role || 'user',
+            password: '',
+            permissions: Array.isArray(userProfile.permissions) ? userProfile.permissions : [],
+          };
+          setUser(userDataForContext);
 
-      // Verificar permissões e redirecionar
-      if (userData.role === 'admin' || permissions.includes("dashboard")) {
-        console.log('Usuário tem permissão para acessar o dashboard');
-        toast({
-          title: "Sucesso",
-          description: "Login realizado com sucesso!"
-        });
-        
-        console.log('Iniciando redirecionamento para /dashboard...');
-        // Usar setTimeout para garantir que o contexto foi atualizado
-        setTimeout(() => {
-          console.log('Executando navigate("/dashboard")');
+          toast({ title: "Sucesso!", description: "Login realizado com sucesso." });
           navigate("/dashboard", { replace: true });
-        }, 500); // Aumentado para 500ms para garantir
+        } else {
+          console.error("Usuário autenticado mas perfil não encontrado na tabela 'users'.");
+          await supabase.auth.signOut();
+          toast({
+            variant: "destructive",
+            title: "Erro de Login",
+            description: "Seu perfil de usuário não foi encontrado. Entre em contato com o suporte.",
+          });
+        }
       } else {
-        console.error('Usuário sem permissão de acesso');
-        toast({ 
+        toast({
           variant: "destructive",
-          title: "Erro",
-          description: "Acesso negado. Você não tem permissão para acessar o sistema."
+          title: "Erro de Login",
+          description: "Falha no login. Verifique suas credenciais e tente novamente.",
         });
       }
     } catch (error) {
-      console.error('Erro no processo de login:', error);
-      toast({ 
+      console.error("Erro inesperado no processo de login:", error);
+      toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro ao tentar fazer login."
+        description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
       });
     } finally {
       setIsLoading(false);
@@ -113,69 +129,92 @@ const Login = () => {
     if (!email) {
       toast({ 
         variant: "destructive",
-        title: "Erro",
-        description: "Digite seu email para recuperar a senha."
+        title: "Recuperação de Senha",
+        description: "Por favor, digite seu email no campo correspondente."
       });
       return;
     }
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    setIsLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setIsLoading(false);
     if (error) {
       console.error('Erro na recuperação de senha:', error);
       toast({ 
         variant: "destructive",
         title: "Erro",
-        description: "Falha ao enviar email de recuperação."
+        description: error.message || "Falha ao enviar email de recuperação."
       });
     } else {
       toast({
-        title: "Recuperação de Senha",
-        description: "Instruções de recuperação de senha foram enviadas para o seu email."
+        title: "Verifique seu Email",
+        description: "Se uma conta com este email existir, instruções de recuperação de senha foram enviadas."
       });
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-football-green to-football-dark-green">
-      <Card className="w-full max-w-md shadow-lg">
+      <Card className="w-full max-w-md shadow-xl mx-4">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Bem-vindo ao FutBoss</CardTitle>
+          <img src="/assets/craque-academy-logo.png" alt="Craque Academy Logo" className="w-20 h-20 mx-auto mb-4"/>
+          <CardTitle className="text-3xl font-bold text-football-dark-green">Bem-vindo!</CardTitle>
+          <CardDescription>Acesse sua conta para gerenciar a escolinha.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <Input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              disabled={isLoading}
-            />
-            <Input
-              type="password"
-              placeholder="Senha"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={isLoading}
-            />
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="seu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+                className="h-12"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+                className="h-12"
+              />
+            </div>
             <Button 
               type="submit" 
-              className="w-full bg-football-green hover:bg-football-dark-green text-white"
+              className="w-full bg-football-green hover:bg-football-dark-green text-white h-12 text-lg"
               disabled={isLoading}
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? (
+                <><svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Entrando...</>
+              ) : "Entrar"}
             </Button>
           </form>
-          <div className="text-center mt-4">
+          <div className="text-center mt-6">
             <button 
               type="button"
               onClick={handlePasswordRecovery} 
-              className="text-sm text-gray-600 hover:text-football-green hover:underline"
+              className="text-sm text-gray-600 hover:text-football-green hover:underline disabled:opacity-50"
               disabled={isLoading}
             >
               Esqueceu a senha?
             </button>
+          </div>
+          <div className="mt-6 text-center text-sm">
+            Não tem uma conta?{" "}
+            <Link to="/register" className="font-medium text-football-green hover:text-football-dark-green hover:underline">
+              Cadastre-se
+            </Link>
           </div>
         </CardContent>
       </Card>

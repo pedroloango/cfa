@@ -70,9 +70,34 @@ interface PaymentType {
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#FF5733', '#C70039'];
 
+const COLORS_BY_STATUS = {
+  Pago: '#48BB78', // Verde
+  Pendente: '#F59E0B', // Amarelo/Âmbar
+  Atrasado: '#EF4444', // Vermelho
+};
+
 const Relatorios = () => {
   const { data: students = [], isLoading: isLoadingStudents } = useStudents();
   const { data: payments = [], isLoading: isLoadingPayments } = useDbPayments();
+
+  // Adicionando logs para depuração de pagamentos
+  useEffect(() => {
+    if (!isLoadingPayments && payments.length > 0) {
+      console.log("Relatorios - Todos os Pagamentos Recebidos:", JSON.parse(JSON.stringify(payments))); // Clonar para melhor inspeção
+      const suspectedOverdue = payments.filter(p => {
+        if (!p.dueDate) return false;
+        const dueDate = new Date(p.dueDate + 'T00:00:00Z');
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0); // Comparar com UTC já que dueDate é tratada como UTC
+        return p.status === "Pendente" && dueDate < today;
+      });
+      console.log("Relatorios - Pagamentos que DEVERIAM ser 'Atrasado' (baseado em dueDate e status Pendente):", suspectedOverdue);
+      
+      const actualOverdue = payments.filter(p => p.status === "Atrasado");
+      console.log("Relatorios - Pagamentos COM STATUS 'Atrasado' no banco:", actualOverdue);
+      console.log("Relatorios - Contagem de 'Atrasado' no banco:", actualOverdue.length);
+    }
+  }, [payments, isLoadingPayments]);
 
   // --- Simulação de Hooks (Substituir por chamadas reais ao Supabase/Hooks) ---
   const [feeSettings, setFeeSettings] = useState<FeeSetting[]>([]);
@@ -118,9 +143,15 @@ const Relatorios = () => {
 
   // --- Cálculos Comuns ---
   const activeStudents = useMemo(() => students.filter(s => s.status === "Ativo"), [students]);
-  const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
+  const today = useMemo(() => new Date(), []); // Memoizar today para evitar recálculos desnecessários
+  const todayNormalized = useMemo(() => {
+    const date = new Date(today);
+    date.setUTCHours(0, 0, 0, 0);
+    return date;
+  }, [today]);
+
+  const currentMonth = useMemo(() => today.getUTCMonth(), [today]);
+  const currentYear = useMemo(() => today.getUTCFullYear(), [today]);
 
   // --- KPIs Aba Geral (Valores Monetários Globais) ---
   const totalPagoGeral = useMemo(() => {
@@ -130,22 +161,36 @@ const Relatorios = () => {
       .reduce((sum, p) => sum + parseCurrency(p.value), 0);
   }, [payments, isLoadingPayments]);
 
-  const totalPendenteGeral = useMemo(() => {
-    if (isLoadingPayments) return 0;
-    return payments
-      .filter(p => p.status === "Pendente")
-      .reduce((sum, p) => sum + parseCurrency(p.value), 0);
-  }, [payments, isLoadingPayments]);
+  const pagamentosConsideradosAtrasados = useMemo(() => {
+    if (isLoadingPayments) return [];
+    return payments.filter(p => {
+      if (!p.dueDate || p.status !== "Pendente") return false; 
+      const dueDate = new Date(p.dueDate + 'T00:00:00Z'); 
+      return dueDate < todayNormalized;
+    });
+  }, [payments, isLoadingPayments, todayNormalized]);
 
   const totalAtrasadoGeral = useMemo(() => {
-    if (isLoadingPayments) return 0;
-    return payments
-      .filter(p => p.status === "Atrasado")
-      .reduce((sum, p) => sum + parseCurrency(p.value), 0);
-  }, [payments, isLoadingPayments]);
+    return pagamentosConsideradosAtrasados.reduce((sum, p) => sum + parseCurrency(p.value), 0);
+  }, [pagamentosConsideradosAtrasados]);
+
+  const pagamentosRealmentePendentes = useMemo(() => {
+    if (isLoadingPayments) return [];
+    return payments.filter(p => {
+        if (!p.dueDate || p.status !== "Pendente") return false;
+        const dueDate = new Date(p.dueDate + 'T00:00:00Z');
+        return dueDate >= todayNormalized; 
+    });
+  }, [payments, isLoadingPayments, todayNormalized]);
+
+  const totalPendenteGeral = useMemo(() => {
+    return pagamentosRealmentePendentes.reduce((sum, p) => sum + parseCurrency(p.value), 0);
+  }, [pagamentosRealmentePendentes]);
   
   const valorTotalPrevistoGeral = useMemo(() => {
     if (isLoadingPayments) return 0;
+    // Soma todos os pagamentos, independentemente do status, para obter o valor total que foi gerado/esperado.
+    // Isso inclui pagos, pendentes (que não estão atrasados), e os que consideramos atrasados (pendentes com data vencida).
     return payments.reduce((sum, p) => sum + parseCurrency(p.value), 0);
   }, [payments, isLoadingPayments]);
 
@@ -158,14 +203,12 @@ const Relatorios = () => {
   }, [payments, isLoadingPayments]);
 
   const pendingPaymentsCount = useMemo(() => {
-      if (isLoadingPayments) return 0;
-      return payments.filter(p => p.status === "Pendente").length;
-  }, [payments, isLoadingPayments]);
+      return pagamentosRealmentePendentes.length;
+  }, [pagamentosRealmentePendentes]);
 
   const overduePaymentsCount = useMemo(() => {
-      if (isLoadingPayments) return 0;
-      return payments.filter(p => p.status === "Atrasado").length;
-  }, [payments, isLoadingPayments]);
+      return pagamentosConsideradosAtrasados.length;
+  }, [pagamentosConsideradosAtrasados]);
 
   // --- KPIs Aba Geral ---
   const totalActiveStudents = useMemo(() => activeStudents.length, [activeStudents]);
@@ -259,11 +302,11 @@ const Relatorios = () => {
   const statusCountData = useMemo(() => {
     if(isLoadingPayments) return [];
     return [
-      { name: "Pago", value: payments.filter(p => p.status === "Pago").length },
-      { name: "Pendente", value: payments.filter(p => p.status === "Pendente").length },
-      { name: "Atrasado", value: payments.filter(p => p.status === "Atrasado").length },
+      { name: "Pago", value: paidPaymentsCount, fill: COLORS_BY_STATUS.Pago },
+      { name: "Pendente", value: pendingPaymentsCount, fill: COLORS_BY_STATUS.Pendente },
+      { name: "Atrasado", value: overduePaymentsCount, fill: COLORS_BY_STATUS.Atrasado },
     ];
-  }, [payments, isLoadingPayments]);
+  }, [paidPaymentsCount, pendingPaymentsCount, overduePaymentsCount, isLoadingPayments]);
   
   // --- Cálculos Aba Financeiro ---
   const totalRecebidoUltimos30Dias = useMemo(() => {
@@ -343,13 +386,21 @@ const Relatorios = () => {
       if (payment.status === "Pago") {
         dataMap[category].Pago += value;
       } else if (payment.status === "Pendente") {
-        dataMap[category].Pendente += value;
-      } else if (payment.status === "Atrasado") {
-        dataMap[category].Atrasado += value;
+        if (payment.dueDate) { 
+          const dueDate = new Date(payment.dueDate + 'T00:00:00Z');
+          if (dueDate < todayNormalized) {
+            dataMap[category].Atrasado += value;
+          } else {
+            dataMap[category].Pendente += value;
+          }
+        } else { 
+          dataMap[category].Pendente += value; // Sem dueDate, continua Pendente
+        }
       }
+      // Não há "else if (payment.status === "Atrasado")" pois já é coberto acima
     });
     return Object.values(dataMap).sort((a,b) => a.categoryName.localeCompare(b.categoryName));
-  }, [payments, students, isLoadingPayments, isLoadingStudents]);
+  }, [payments, students, isLoadingPayments, isLoadingStudents, todayNormalized]);
 
   // --- Cálculos para Aba Categorias ---
   const uniqueStudentCategories = useMemo(() => {
@@ -407,21 +458,33 @@ const Relatorios = () => {
   const statusPagamentosSelectedCatMesAtual = useMemo(() => {
     if (isLoadingPayments) return [];
     const pagamentosDoMes = paymentsOfSelectedCategory.filter(p => {
-      const dueDate = new Date(p.dueDate + 'T00:00:00Z'); // ou p.paymentDate dependendo da regra
+      if (!p.dueDate) return false; 
+      const dueDate = new Date(p.dueDate + 'T00:00:00Z'); 
       return dueDate.getUTCMonth() === currentMonth && dueDate.getUTCFullYear() === currentYear;
     });
+
     const statusMap = {
       Pago: 0,
-      Pendente: 0,
-      Atrasado: 0
+      Pendente: 0, // Pendente não vencido no mês atual
+      Atrasado: 0  // Pendente vencido no mês atual
     };
+
     pagamentosDoMes.forEach(p => {
-      if (p.status === "Pago") statusMap.Pago += parseCurrency(p.value);
-      else if (p.status === "Pendente") statusMap.Pendente += parseCurrency(p.value);
-      else if (p.status === "Atrasado") statusMap.Atrasado += parseCurrency(p.value);
+      const value = parseCurrency(p.value);
+      if (p.status === "Pago") {
+        statusMap.Pago += value;
+      } else if (p.status === "Pendente") {
+        const dueDate = new Date(p.dueDate! + 'T00:00:00Z');
+        if (dueDate < todayNormalized) {
+          statusMap.Atrasado += value;
+        } else {
+          statusMap.Pendente += value;
+        }
+      }
+      // Não há status "Atrasado" explícito do banco
     });
     return Object.entries(statusMap).map(([name, value]) => ({ name, value })).filter(item => item.value > 0);
-  }, [paymentsOfSelectedCategory, currentMonth, currentYear, isLoadingPayments]);
+  }, [paymentsOfSelectedCategory, currentMonth, currentYear, isLoadingPayments, todayNormalized]);
 
   // --- Cálculos para Gráfico Comparativo de Receita Mensal (Categoria vs Média Geral) ---
   const receitaMensalCategoriaSelecionada = useMemo(() => {
@@ -555,7 +618,7 @@ const Relatorios = () => {
               <Card><CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Pagas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-600">{paidPaymentsCount}</div></CardContent></Card>
               <Card><CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Pendentes</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-amber-600">{pendingPaymentsCount}</div></CardContent></Card>
               <Card><CardHeader className="pb-2"><CardTitle className="text-base font-semibold">Atrasadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{overduePaymentsCount}</div></CardContent></Card>
-            </div>
+                </div>
             
             {/* KPIs Adicionais da Aba Geral (Alunos, Descontos, Mês Atual) */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -563,14 +626,33 @@ const Relatorios = () => {
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Descontos Bolsistas (Estimado)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">R$ {totalScholarshipDiscountValue.toFixed(2).replace('.',',')}</div><p className="text-xs text-muted-foreground">Valor não realizado por bolsas</p></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Receita Total (Mês Atual)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">R$ {receitaTotalMesAtual.toFixed(2).replace('.',',')}</div></CardContent></Card>
                 <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">Inadimplência (Mês Atual)</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{taxaInadimplenciaMesAtual.percent}%</div><p className="text-xs text-muted-foreground">{taxaInadimplenciaMesAtual.details}</p></CardContent></Card>
-            </div>
+                </div>
 
             {/* Gráficos da Aba Geral */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
               <Card className="lg:col-span-4"><CardHeader><CardTitle>Evolução de Alunos Ativos</CardTitle><CardDescription>Número de alunos ativos (últimos 12 meses)</CardDescription></CardHeader><CardContent className="pl-2"><div className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><LineChart data={monthlyStudentGrowth} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="month" /><YAxis /><Tooltip /><Legend /><Line type="monotone" dataKey="alunos" stroke="#0D9F4F" strokeWidth={2} name="Alunos Ativos" dot={{ r: 4 }} activeDot={{ r: 6 }}/></LineChart></ResponsiveContainer></div></CardContent></Card>
               <Card className="lg:col-span-3"><CardHeader><CardTitle>Alunos Ativos por Categoria</CardTitle><CardDescription>Distribuição dos alunos ativos</CardDescription></CardHeader><CardContent className="pl-2"><div className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={studentDistributionByCategory} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" /><YAxis dataKey="name" type="category" width={100} interval={0} /><Tooltip /><Legend /><Bar dataKey="value" fill="#0D9F4F" name="Alunos" label={{ position: 'right' }} /></BarChart></ResponsiveContainer></div></CardContent></Card>
             </div>
-            <Card><CardHeader><CardTitle>Pagamentos por Status (Visão Geral)</CardTitle><CardDescription>Quantidade total de todos os pagamentos registrados</CardDescription></CardHeader><CardContent><div className="h-[300px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={statusCountData}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="name" /><YAxis allowDecimals={false}/><Tooltip /><Legend /><Bar dataKey="value" fill="#0D9F4F" name="Quantidade" label={{ position: 'top' }} /></BarChart></ResponsiveContainer></div></CardContent></Card>
+            <Card><CardHeader><CardTitle>Pagamentos por Status (Visão Geral)</CardTitle><CardDescription>Quantidade total de todos os pagamentos registrados</CardDescription></CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={statusCountData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis allowDecimals={false}/>
+                      <Tooltip formatter={(value: number, name: string, props) => [`${props.payload.value} ${props.payload.name}`, "Quantidade"]}/>
+                      <Legend />
+                      <Bar dataKey="value" name="Quantidade" label={{ position: 'top' }} >
+                        {statusCountData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
           {/* --- ABA FINANCEIRO --- */}
@@ -584,17 +666,17 @@ const Relatorios = () => {
             <Card>
               <CardHeader><CardTitle>Receita Mensal (Pago vs Previsto)</CardTitle><CardDescription>Inclui Pagamentos e Receitas Adicionais (últimos 12 meses)</CardDescription></CardHeader>
               <CardContent className="pl-2"><div className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={receitaMensalPagoVsPrevisto} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
                     <Tooltip formatter={(value: number) => `R$ ${value.toFixed(2)}`} />
-                    <Legend />
+                      <Legend />
                     <Bar dataKey="previsto" fill="#A0AEC0" name="Previsto (Mensalidades)" />
                     <Bar dataKey="pago" fill="#48BB78" name="Realizado (Pagos + Outras Receitas)" />
-                  </BarChart>
-                </ResponsiveContainer>
+                    </BarChart>
+                  </ResponsiveContainer>
               </div></CardContent>
             </Card>
 
@@ -625,7 +707,7 @@ const Relatorios = () => {
             <Card>
               <CardHeader><CardTitle>Distribuição da Receita por Tipo</CardTitle><CardDescription>Valores pagos de todas as fontes (Pagamentos e Receitas Adicionais)</CardDescription></CardHeader>
               <CardContent className="h-[400px] flex justify-center items-center">
-                <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%">
                     <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
                         <Pie data={distribuicaoReceitaPorTipo} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} labelLine={false} label={({ name, percent, value }) => `${name} (${(percent * 100).toFixed(0)}%) - R$${value.toFixed(0)}`}>
                             {distribuicaoReceitaPorTipo.map((entry, index) => (
@@ -635,7 +717,7 @@ const Relatorios = () => {
                         <Tooltip formatter={(value: number, name: string) => [`R$ ${value.toFixed(2)}`, name]} />
                         <Legend wrapperStyle={{bottom: 0, left: 0, right: 0, position: 'relative'}} />
                     </PieChart>
-                </ResponsiveContainer>
+                  </ResponsiveContainer>
               </CardContent>
             </Card>
           </TabsContent>
@@ -722,12 +804,12 @@ const Relatorios = () => {
             
             {/* Gráfico Comparativo de Receita Mensal */}
             <Card className="mt-6">
-                <CardHeader>
+                  <CardHeader>
                     <CardTitle>Comparativo de Receita Mensal</CardTitle>
                     <CardDescription>
                         Receita da {selectedCategory || 'Geral (Todas Categorias)'} vs. Receita Média por Aluno (Geral)
                     </CardDescription>
-                </CardHeader>
+                  </CardHeader>
                 <CardContent className="pl-2">
                   <div className="h-[350px]">
                     {comparativoReceitaMensalData.length > 0 ? (
@@ -761,9 +843,9 @@ const Relatorios = () => {
                     ) : (
                       <p className="text-muted-foreground text-center py-10">Dados insuficientes para exibir o gráfico comparativo.</p>
                     )}
-                  </div>
-                </CardContent>
-            </Card>
+                    </div>
+                  </CardContent>
+                </Card>
 
           </TabsContent>
         </Tabs>

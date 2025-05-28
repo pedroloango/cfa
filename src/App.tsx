@@ -14,6 +14,8 @@ import Configuracoes from "./pages/Configuracoes";
 import GameReports from "./pages/GameReports";
 import Dashboard from "./pages/Dashboard";
 import Receitas from "./pages/Receitas";
+import Login from "./pages/Login";
+import Atividades from "./pages/Atividades";
 
 const queryClient = new QueryClient();
 
@@ -25,12 +27,14 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/alunos" element={<Alunos />} />
           <Route path="/mensalidades" element={<Mensalidades />} />
           <Route path="/avaliacoes" element={<Avaliacoes />} />
           <Route path="/scout" element={<Scout />} />
           <Route path="/relatorio-jogos" element={<GameReports />} />
           <Route path="/relatorios" element={<Relatorios />} />
+          <Route path="/atividades" element={<Atividades />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/receitas" element={<Receitas />} />
