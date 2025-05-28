@@ -12,6 +12,8 @@ import Scout from "./pages/Scout";
 import NotFound from "./pages/NotFound";
 import Configuracoes from "./pages/Configuracoes";
 import GameReports from "./pages/GameReports";
+import Dashboard from "./pages/Dashboard";
+import Receitas from "./pages/Receitas";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => (
           <Route path="/relatorio-jogos" element={<GameReports />} />
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/receitas" element={<Receitas />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

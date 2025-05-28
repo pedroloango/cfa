@@ -406,11 +406,7 @@ const Alunos = () => {
         studentsList={students}
       />
 
-      <ImportStudentsForm
-        open={isImportFormOpen}
-        onClose={() => setIsImportFormOpen(false)}
-        onImport={handleImportStudents}
-      />
+      <ImportStudentsForm open={isImportFormOpen} onClose={() => setIsImportFormOpen(false)} onImport={handleImportStudents} />
     </MainLayout>
   );
 };

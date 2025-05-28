@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -9,6 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Search, FilterX } from "lucide-react";
 import { MONTHS } from "@/types/payment";
+import React from "react";
 
 interface PaymentFiltersProps {
   searchTerm: string;
@@ -19,11 +19,16 @@ interface PaymentFiltersProps {
   onMonthFilterChange: (value: string) => void;
   categoryFilter: string;
   onCategoryFilterChange: (value: string) => void;
+  paymentTypeFilter: string;
+  onPaymentTypeFilterChange: (value: string) => void;
+  descriptionFilter: string;
+  onDescriptionFilterChange: (value: string) => void;
   onClearFilters: () => void;
   categories: string[];
+  paymentTypes: string[];
 }
 
-export const PaymentFilters = ({
+export const PaymentFilters = React.memo(({
   searchTerm,
   onSearchChange,
   statusFilter,
@@ -32,12 +37,18 @@ export const PaymentFilters = ({
   onMonthFilterChange,
   categoryFilter,
   onCategoryFilterChange,
+  paymentTypeFilter,
+  onPaymentTypeFilterChange,
+  descriptionFilter,
+  onDescriptionFilterChange,
   onClearFilters,
   categories,
+  paymentTypes,
 }: PaymentFiltersProps) => {
+  console.log("PaymentFilters rendered");
   return (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 space-x-0 sm:space-x-2">
-      <div className="relative flex-1 max-w-full sm:max-w-sm w-full">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:flex lg:flex-row items-start lg:items-center gap-2 mb-4">
+      <div className="relative flex-1 min-w-[200px]">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
           type="search"
@@ -45,6 +56,15 @@ export const PaymentFilters = ({
           className="pl-8 w-full"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
+        />
+      </div>
+      <div className="relative flex-1 min-w-[200px]">
+        <Input
+          type="text"
+          placeholder="Buscar por descrição..."
+          className="w-full"
+          value={descriptionFilter}
+          onChange={(e) => onDescriptionFilterChange(e.target.value)}
         />
       </div>
       <DropdownMenu>
@@ -84,7 +104,20 @@ export const PaymentFilters = ({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      {(searchTerm || statusFilter || monthFilter || categoryFilter) && (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-full sm:w-auto">Tipo de Pagamento</Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuItem onClick={() => onPaymentTypeFilterChange("")}>Todos</DropdownMenuItem>
+          {paymentTypes.map((type) => (
+            <DropdownMenuItem key={type} onClick={() => onPaymentTypeFilterChange(type)}>
+              {type}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {(searchTerm || statusFilter || monthFilter || categoryFilter || paymentTypeFilter || descriptionFilter) && (
         <Button 
           variant="ghost" 
           size="icon"
@@ -96,4 +129,4 @@ export const PaymentFilters = ({
       )}
     </div>
   );
-};
+});

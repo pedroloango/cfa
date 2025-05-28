@@ -1,4 +1,3 @@
-
 import { Payment } from "@/types/payment";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -19,7 +18,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Check, MoreVertical, QrCode, FileText, Info } from "lucide-react";
+import { Check, MoreVertical, QrCode, FileText, Info, RefreshCcw, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 interface PaymentsTableProps {
   payments: Payment[];
@@ -27,6 +27,8 @@ interface PaymentsTableProps {
   onGeneratePix: (payment: Payment) => void;
   onViewReceipt: (payment: Payment) => void;
   onViewDetails: (payment: Payment) => void;
+  onRevertPayment: (payment: Payment) => void;
+  onDeletePayment: (payment: Payment) => void;
 }
 
 export const PaymentsTable = ({
@@ -35,7 +37,20 @@ export const PaymentsTable = ({
   onGeneratePix,
   onViewReceipt,
   onViewDetails,
+  onRevertPayment,
+  onDeletePayment,
 }: PaymentsTableProps) => {
+  // Paginação
+  const [page, setPage] = useState(1);
+  const pageSize = 30;
+
+  useEffect(() => {
+    setPage(1);
+  }, [payments]);
+
+  const totalPages = Math.ceil(payments.length / pageSize);
+  const paginatedPayments = payments.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <div className="border rounded-md overflow-x-auto">
       <Table>
@@ -44,16 +59,18 @@ export const PaymentsTable = ({
             <TableHead>Aluno</TableHead>
             <TableHead>Categoria</TableHead>
             <TableHead>Mês</TableHead>
+            <TableHead>Descrição</TableHead>
             <TableHead>Valor</TableHead>
             <TableHead>Vencimento</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Método</TableHead>
+            <TableHead>Tipo de Pagamento</TableHead>
             <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {payments.length > 0 ? (
-            payments.map((payment) => (
+          {paginatedPayments.length > 0 ? (
+            paginatedPayments.map((payment) => (
               <TableRow key={payment.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center space-x-2">
@@ -70,6 +87,7 @@ export const PaymentsTable = ({
                 </TableCell>
                 <TableCell>{payment.category}</TableCell>
                 <TableCell>{payment.month}</TableCell>
+                <TableCell>{payment.description || "-"}</TableCell>
                 <TableCell>{payment.value}</TableCell>
                 <TableCell>{payment.dueDate}</TableCell>
                 <TableCell>
@@ -93,6 +111,7 @@ export const PaymentsTable = ({
                   </Badge>
                 </TableCell>
                 <TableCell>{payment.paymentMethod}</TableCell>
+                <TableCell>{payment.paymentType}</TableCell>
                 <TableCell>
                   <div className="flex space-x-1">
                     {payment.status !== "Pago" && (
@@ -120,6 +139,16 @@ export const PaymentsTable = ({
                         <DropdownMenuItem onClick={() => onViewReceipt(payment)}>
                           <FileText className="mr-2 h-4 w-4" /> Recibo
                         </DropdownMenuItem>
+                        {payment.status === "Pago" && (
+                          <DropdownMenuItem onClick={() => onRevertPayment(payment)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <RefreshCcw className="mr-2 h-4 w-4" /> Reverter para Pendente
+                          </DropdownMenuItem>
+                        )}
+                        {payment.status === "Pendente" && (
+                          <DropdownMenuItem onClick={() => onDeletePayment(payment)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Registro
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => onViewDetails(payment)}>
                           <Info className="mr-2 h-4 w-4" /> Detalhes
@@ -132,13 +161,25 @@ export const PaymentsTable = ({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
+              <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
                 Nenhum pagamento encontrado.
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
+      {/* Paginação */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-2 py-4">
+          <Button variant="outline" size="sm" onClick={() => setPage(page - 1)} disabled={page === 1}>
+            Anterior
+          </Button>
+          <span>Página {page} de {totalPages}</span>
+          <Button variant="outline" size="sm" onClick={() => setPage(page + 1)} disabled={page === totalPages}>
+            Próxima
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
