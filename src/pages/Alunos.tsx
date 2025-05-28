@@ -323,29 +323,33 @@ const Alunos = () => {
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => (
                   <TableRow key={student.id}>
-                    <TableCell>{student.name}</TableCell>
                     <TableCell>
-                      {student.birthDate 
-                        ? new Date(student.birthDate).toLocaleDateString("pt-BR") 
-                        : ""}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback>
+                            {student.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">{student.name}</div>
+                      </div>
                     </TableCell>
-                    <TableCell>{student.rg}</TableCell>
-                    <TableCell>{student.cpf}</TableCell>
+                    <TableCell>{student.birthDate ? new Date(student.birthDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
+                    <TableCell>{student.rg || 'N/A'}</TableCell>
+                    <TableCell>{student.cpf || 'N/A'}</TableCell>
                     <TableCell>{student.category}</TableCell>
+                    <TableCell>{student.joinDate ? new Date(student.joinDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
+                    <TableCell>{student.polo || 'N/A'}</TableCell>
                     <TableCell>
-                      {student.joinDate && /^\d{4}-\d{2}-\d{2}/.test(student.joinDate)
-                        ? new Date(student.joinDate).toLocaleDateString('pt-BR')
-                        : student.joinDate
-                      }
+                      <Badge variant={student.status === 'Ativo' ? 'default' : student.status === 'Pendente' ? 'secondary' : 'destructive'}>
+                        {student.status}
+                      </Badge>
                     </TableCell>
-                    <TableCell>{student.polo}</TableCell>
-                    <TableCell>{student.status}</TableCell>
-                    <TableCell>{student.responsibleName}</TableCell>
-                    <TableCell>{student.responsibleCpf}</TableCell>
-                    <TableCell>{student.whatsapp}</TableCell>
-                    <TableCell>{student.address}</TableCell>
-                    <TableCell>{student.position}</TableCell>
-                    <TableCell>{student.phone}</TableCell>
+                    <TableCell>{student.responsibleName || 'N/A'}</TableCell>
+                    <TableCell>{student.responsibleCpf || 'N/A'}</TableCell>
+                    <TableCell>{student.whatsapp || 'N/A'}</TableCell>
+                    <TableCell>{student.address || 'N/A'}</TableCell>
+                    <TableCell>{student.position || 'N/A'}</TableCell>
+                    <TableCell>{student.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
