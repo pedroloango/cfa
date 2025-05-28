@@ -15,7 +15,7 @@ import {
   useUpdateCompetitionGame,
   useDeleteCompetitionGame
 } from "@/hooks/useCompetitionGames";
-import { formatDate } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useToast } from "@/components/ui/use-toast";
 import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
@@ -23,7 +23,7 @@ import { ConfirmActionDialog } from "@/components/ui/confirm-action-dialog";
 // Helper para formatar a data e hora de forma mais amigável
 const formatGameDateTime = (date: Date, time: string) => {
   try {
-    const formattedDate = formatDate(date, "P", { locale: ptBR });
+    const formattedDate = format(date, "P", { locale: ptBR });
     return `${formattedDate} às ${time}`;
   } catch (error) {
     console.error("Error formatting date/time:", error);
