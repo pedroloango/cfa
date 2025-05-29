@@ -454,9 +454,9 @@ const Avaliacoes = () => {
               <TableRow>
                 <TableHead>Aluno</TableHead>
                 <TableHead>Categoria</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Avaliação Geral</TableHead>
-                <TableHead>Observações</TableHead>
+                <TableHead className="whitespace-nowrap">Data</TableHead>
+                <TableHead className="whitespace-nowrap">Avaliação Geral</TableHead>
+                <TableHead className="hidden md:table-cell">Observações</TableHead>
                 <TableHead className="w-[80px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -466,13 +466,13 @@ const Avaliacoes = () => {
                   <TableRow key={evaluation.id}>
                     <TableCell>{evaluation.student?.name}</TableCell>
                     <TableCell>{evaluation.student?.category}</TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {new Date(evaluation.date).toLocaleDateString("pt-BR")}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="whitespace-nowrap">
                       {((evaluation.technical + evaluation.tactical + evaluation.physical + evaluation.mental) / 4).toFixed(1)}
                     </TableCell>
-                    <TableCell>{evaluation.notes}</TableCell>
+                    <TableCell className="hidden md:table-cell">{evaluation.notes}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

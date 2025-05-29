@@ -58,13 +58,13 @@ export const PaymentsTable = ({
           <TableRow>
             <TableHead>Aluno</TableHead>
             <TableHead>Categoria</TableHead>
-            <TableHead>Mês</TableHead>
+            <TableHead className="hidden md:table-cell">Mês</TableHead>
             <TableHead>Descrição</TableHead>
-            <TableHead>Valor</TableHead>
-            <TableHead>Vencimento</TableHead>
+            <TableHead className="whitespace-nowrap">Valor</TableHead>
+            <TableHead className="whitespace-nowrap">Vencimento</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Método</TableHead>
-            <TableHead>Tipo de Pagamento</TableHead>
+            <TableHead className="hidden lg:table-cell">Método</TableHead>
+            <TableHead className="hidden lg:table-cell">Tipo de Pagamento</TableHead>
             <TableHead className="w-[120px]">Ações</TableHead>
           </TableRow>
         </TableHeader>
@@ -86,10 +86,10 @@ export const PaymentsTable = ({
                   </div>
                 </TableCell>
                 <TableCell>{payment.category}</TableCell>
-                <TableCell>{payment.month}</TableCell>
+                <TableCell className="hidden md:table-cell">{payment.month}</TableCell>
                 <TableCell>{payment.description || "-"}</TableCell>
-                <TableCell>{payment.value}</TableCell>
-                <TableCell>{payment.dueDate}</TableCell>
+                <TableCell className="whitespace-nowrap">{payment.value}</TableCell>
+                <TableCell className="whitespace-nowrap">{payment.dueDate}</TableCell>
                 <TableCell>
                   <Badge
                     variant={
@@ -110,8 +110,8 @@ export const PaymentsTable = ({
                     {payment.status}
                   </Badge>
                 </TableCell>
-                <TableCell>{payment.paymentMethod}</TableCell>
-                <TableCell>{payment.paymentType}</TableCell>
+                <TableCell className="hidden lg:table-cell">{payment.paymentMethod}</TableCell>
+                <TableCell className="hidden lg:table-cell">{payment.paymentType}</TableCell>
                 <TableCell>
                   <div className="flex space-x-1">
                     {payment.status !== "Pago" && (

@@ -303,19 +303,19 @@ const Alunos = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Nome do Atleta</TableHead>
-                <TableHead>Data de Nasc.</TableHead>
-                <TableHead>RG</TableHead>
-                <TableHead>CPF</TableHead>
+                <TableHead className="whitespace-nowrap">Data de Nasc.</TableHead>
+                <TableHead className="hidden md:table-cell">RG</TableHead>
+                <TableHead className="hidden md:table-cell">CPF</TableHead>
                 <TableHead>Categoria</TableHead>
-                <TableHead>Início em</TableHead>
-                <TableHead>Polo</TableHead>
+                <TableHead className="whitespace-nowrap hidden md:table-cell">Início em</TableHead>
+                <TableHead className="hidden md:table-cell">Polo</TableHead>
                 <TableHead>Situação</TableHead>
-                <TableHead>Nome do Responsável</TableHead>
-                <TableHead>CPF do Responsável</TableHead>
-                <TableHead>Whatsapp</TableHead>
-                <TableHead>Endereço</TableHead>
+                <TableHead className="hidden md:table-cell">Nome do Responsável</TableHead>
+                <TableHead className="hidden md:table-cell">CPF do Responsável</TableHead>
+                <TableHead className="hidden md:table-cell">Whatsapp</TableHead>
+                <TableHead className="hidden md:table-cell">Endereço</TableHead>
                 <TableHead>Posição</TableHead>
-                <TableHead>Telefone</TableHead>
+                <TableHead className="hidden md:table-cell">Telefone</TableHead>
                 <TableHead className="w-[80px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -333,23 +333,23 @@ const Alunos = () => {
                         <div className="font-medium">{student.name}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{student.birthDate ? new Date(student.birthDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
-                    <TableCell>{student.rg || 'N/A'}</TableCell>
-                    <TableCell>{student.cpf || 'N/A'}</TableCell>
+                    <TableCell className="whitespace-nowrap">{student.birthDate ? new Date(student.birthDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.rg || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.cpf || 'N/A'}</TableCell>
                     <TableCell>{student.category}</TableCell>
-                    <TableCell>{student.joinDate ? new Date(student.joinDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
-                    <TableCell>{student.polo || 'N/A'}</TableCell>
+                    <TableCell className="whitespace-nowrap hidden md:table-cell">{student.joinDate ? new Date(student.joinDate + 'T00:00:00Z').toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.polo || 'N/A'}</TableCell>
                     <TableCell>
                       <Badge variant={student.status === 'Ativo' ? 'default' : student.status === 'Pendente' ? 'secondary' : 'destructive'}>
                         {student.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{student.responsibleName || 'N/A'}</TableCell>
-                    <TableCell>{student.responsibleCpf || 'N/A'}</TableCell>
-                    <TableCell>{student.whatsapp || 'N/A'}</TableCell>
-                    <TableCell>{student.address || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.responsibleName || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.responsibleCpf || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.whatsapp || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.address || 'N/A'}</TableCell>
                     <TableCell>{student.position || 'N/A'}</TableCell>
-                    <TableCell>{student.phone || 'N/A'}</TableCell>
+                    <TableCell className="hidden md:table-cell">{student.phone || 'N/A'}</TableCell>
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -379,7 +379,7 @@ const Alunos = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={14} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={15} className="text-center py-6 text-muted-foreground">
                     Nenhum aluno encontrado.
                   </TableCell>
                 </TableRow>
