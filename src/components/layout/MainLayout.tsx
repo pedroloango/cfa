@@ -16,10 +16,22 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const navigate = useNavigate();
 
+  console.log("MainLayout RENDER, showMobileSidebar:", showMobileSidebar, "isMobile:", isMobile);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     navigate("/login");
   };
+
+  const handleCloseSidebar = () => {
+    console.log("handleCloseSidebar CALLED, setting showMobileSidebar to false");
+    setShowMobileSidebar(false);
+  };
+
+  const handleOpenSidebar = () => {
+    console.log("handleOpenSidebar CALLED, setting showMobileSidebar to true");
+    setShowMobileSidebar(true);
+  }
 
   return (
     <div className="min-h-screen flex relative bg-background">
@@ -28,7 +40,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-200 ${
             showMobileSidebar ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
-          onClick={() => setShowMobileSidebar(false)}
+          onClick={handleCloseSidebar}
         />
       ) : null}
       
@@ -41,7 +53,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             : "absolute"
         }`}
       >
-        <Sidebar onClose={() => setShowMobileSidebar(false)} />
+        <Sidebar onClose={handleCloseSidebar} />
       </div>
 
       <div className={`flex-1 flex flex-col ${isMobile ? "" : "ml-[250px]"}`}>
@@ -51,7 +63,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               variant="ghost" 
               size="icon" 
               className="mr-2"
-              onClick={() => setShowMobileSidebar(true)}
+              onClick={handleOpenSidebar}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -60,7 +72,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             Logout
           </Button>
         </Header>
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
           {children}
         </main>
       </div>
