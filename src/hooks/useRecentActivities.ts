@@ -50,8 +50,9 @@ export const useRecentActivities = () => {
       const { data: enrollments } = await supabase
         .from('students')
         .select('id, name, category, created_at')
-        .order('created_at', { ascending: false })
         .limit(3);
+
+      console.log("Dashboard/Atividades - Enrollments recebidos:", enrollments);
 
       const { data: payments } = await supabase
         .from('payments')
