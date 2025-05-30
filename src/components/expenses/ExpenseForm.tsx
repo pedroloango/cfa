@@ -142,6 +142,7 @@ export const ExpenseForm = ({
   };
 
   const watchedStatus = form.watch("status");
+  const watchedIsRecurring = form.watch("is_recurring"); // Observar o campo is_recurring
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -238,7 +239,7 @@ export const ExpenseForm = ({
                 name="due_date"
                 render={({ field }) => (
                   <FormItem className="flex flex-col">
-                    <FormLabel>Data de Vencimento</FormLabel>
+                    <FormLabel>{watchedIsRecurring && !initialData ? "Data da Primeira Parcela" : "Data de Vencimento"}</FormLabel>
                     <DatePicker date={field.value} setDate={field.onChange} />
                     <FormMessage />
                   </FormItem>
@@ -315,14 +316,16 @@ export const ExpenseForm = ({
                     <div className="space-y-0.5">
                       <FormLabel>Despesa Recorrente</FormLabel>
                       <DialogDescription>
-                        Marque se esta despesa se repetirá nos meses seguintes (dentro do ano corrente).
+                        {watchedIsRecurring && !initialData
+                          ? "A data selecionada acima será a da primeira parcela. As parcelas seguintes serão geradas no mesmo dia para os meses subsequentes do ano corrente."
+                          : "Marque se esta despesa se repetirá nos meses seguintes (dentro do ano corrente)."}
                       </DialogDescription>
                     </div>
                     <FormControl>
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={!!initialData}
+                        disabled={!!initialData} // Desabilitar se for edição (initialData existe)
                       />
                     </FormControl>
                   </FormItem>
