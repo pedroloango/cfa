@@ -18,7 +18,8 @@ import {
   Receipt,
   FileText,
   LogOut,
-  BarChart2
+  BarChart2,
+  ListMinus
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -35,6 +36,7 @@ const menuItems = [
   { path: "/relatorio-jogos", label: "Relatório de Jogos", icon: FileSpreadsheet },
   { path: "/relatorios", label: "Relatórios", icon: FileText },
   { path: "/receitas", label: "Receitas", icon: Receipt },
+  { path: "/despesas", label: "Despesas", icon: ListMinus },
   { path: "/atividades", label: "Atividades", icon: ClipboardList },
   { path: "/configuracoes", label: "Configurações", icon: Settings },
 ];

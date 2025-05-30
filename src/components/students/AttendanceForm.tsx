@@ -104,10 +104,10 @@ export function AttendanceForm({
     const recordsToSave = filteredStudents
       .filter(student => attendance[student.id] !== null)
       .map(student => ({
-        studentId: student.id,
-        studentName: student.name,
+      studentId: student.id,
+      studentName: student.name,
         present: attendance[student.id] as boolean
-      }));
+    }));
 
     if (recordsToSave.length === 0) {
       toast({
@@ -190,15 +190,15 @@ export function AttendanceForm({
                     {filteredStudents.map((student) => {
                       const studentStatus = attendance[student.id];
                       return (
-                        <div
-                          key={student.id}
+                      <div
+                        key={student.id}
                           className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md gap-2"
-                        >
+                      >
                           <span className="flex-1 truncate" title={student.name}>{student.name}</span>
                           <div className="flex items-center gap-1">
-                            <Button
+                        <Button
                               variant={studentStatus === true ? "default" : "outline"}
-                              size="sm"
+                          size="sm"
                               onClick={() => handleSetAttendance(student.id, true)}
                               className={`px-2 h-8 ${studentStatus === true ? "bg-football-green hover:bg-football-dark-green text-white" : ""}`}
                               title="Marcar como Presente"
@@ -228,7 +228,7 @@ export function AttendanceForm({
                               </Button>
                             )}
                           </div>
-                        </div>
+                      </div>
                       );
                     })}
                   </div>

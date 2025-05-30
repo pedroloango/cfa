@@ -34,8 +34,8 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Tenta carregar o usuário do localStorage ou de uma sessão Supabase ao iniciar
     // Esta parte pode ser ajustada conforme a lógica de sessão do Supabase
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
       try {
         const parsedUser: User = JSON.parse(storedUser);
         setUser(parsedUser);

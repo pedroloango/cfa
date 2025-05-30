@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -138,14 +137,20 @@ export function StudentForm({
       return;
     }
     
-    // Validate scholarship discount if scholarship is enabled
-    if (student.hasScholarship && (student.scholarshipDiscount === undefined || student.scholarshipDiscount < 0 || student.scholarshipDiscount > 100)) {
+    // Validar valor do desconto se bolsista estiver ativo
+    if (student.hasScholarship && (student.scholarshipDiscount === undefined || student.scholarshipDiscount < 0)) {
       toast({
         title: "Desconto inválido",
-        description: "O percentual de desconto deve estar entre 0 e 100.",
+        description: "O valor do desconto não pode ser negativo.", // Mensagem ajustada
         variant: "destructive",
       });
       return;
+    }
+    if (student.hasScholarship && student.scholarshipDiscount === undefined ) { // Garantir que não é undefined se for bolsista
+       student.scholarshipDiscount = 0; // Ou algum outro tratamento, como erro
+    }
+    if (!student.hasScholarship) { // Se não for bolsista, zerar o desconto
+      student.scholarshipDiscount = 0;
     }
     
     onSave(student);
@@ -187,7 +192,7 @@ export function StudentForm({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>
             {initialData ? "Editar Aluno" : "Novo Aluno"}
@@ -196,236 +201,214 @@ export function StudentForm({
             Preencha os dados do aluno nos campos abaixo.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Nome do Atleta*</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={student.name}
-                  onChange={handleChange}
-                  placeholder="Nome do atleta"
-                  className="w-full"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birthDate">Data de Nasc.*</Label>
-                <Input
-                  id="birthDate"
-                  name="birthDate"
-                  type="date"
-                  value={student.birthDate ? student.birthDate.split('T')[0] : ""}
-                  onChange={handleDateChange}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="rg">RG</Label>
-                <Input
-                  id="rg"
-                  name="rg"
-                  value={student.rg}
-                  onChange={handleChange}
-                  placeholder="RG"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="cpf">CPF</Label>
-                <Input
-                  id="cpf"
-                  name="cpf"
-                  value={student.cpf}
-                  onChange={handleChange}
-                  placeholder="CPF"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="category">Categoria*</Label>
-                <Select
-                  value={student.category}
-                  onValueChange={(value) => handleSelectChange("category", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {CATEGORIES.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="joinDate">Início em</Label>
-                <Input
-                  id="joinDate"
-                  name="joinDate"
-                  type="date"
-                  value={student.joinDate ? (
-                    /^\d{2}\/\d{2}\/\d{4}$/.test(student.joinDate)
-                      ? new Date(student.joinDate.split("/").reverse().join("-")).toISOString().split("T")[0]
-                      : student.joinDate.split("T")[0]
-                  ) : ""}
-                  onChange={e => setStudent(prev => ({ ...prev, joinDate: e.target.value }))}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="polo">Polo</Label>
-                <Select
-                  value={student.polo}
-                  onValueChange={(value) => handleSelectChange("polo", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o polo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {POLOS.map((polo) => (
-                      <SelectItem key={polo} value={polo}>
-                        {polo}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Situação</Label>
-                <Select
-                  value={student.status}
-                  onValueChange={(value) => handleSelectChange("status", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsibleName">Nome do Responsável</Label>
-                <Input
-                  id="responsibleName"
-                  name="responsibleName"
-                  value={student.responsibleName}
-                  onChange={handleChange}
-                  placeholder="Nome do responsável"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
-                <Input
-                  id="responsibleCpf"
-                  name="responsibleCpf"
-                  value={student.responsibleCpf}
-                  onChange={handleChange}
-                  placeholder="CPF do responsável"
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="address">Endereço</Label>
-                <Input
-                  id="address"
-                  name="address"
-                  value={student.address}
-                  onChange={handleChange}
-                  placeholder="Endereço"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="position">Posição*</Label>
-                <Select
-                  value={student.position}
-                  onValueChange={(value) => handleSelectChange("position", value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a posição" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {POSITIONS.map((position) => (
-                      <SelectItem key={position} value={position}>
-                        {position}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Whatsapp</Label>
-                <Input
-                  id="phone"
-                  name="phone"
-                  value={student.phone}
-                  onChange={handleChange}
-                  placeholder="(xx) xxxxx-xxxx"
-                />
-              </div>
-            </div>
-            
-            {/* Scholarship section */}
-            <div className="border p-4 rounded-md space-y-4">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="hasScholarship">Bolsista</Label>
-                <Switch 
-                  id="hasScholarship" 
-                  checked={student.hasScholarship || false}
-                  onCheckedChange={(checked) => {
-                    setStudent(prev => ({
-                      ...prev,
-                      hasScholarship: checked,
-                      scholarshipDiscount: checked ? (prev.scholarshipDiscount || 0) : 0
-                    }));
-                  }}
-                />
-              </div>
-              
-              {student.hasScholarship && (
+        <div className="flex-grow overflow-y-auto pr-2 space-y-4 py-1 scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-muted">
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="scholarshipDiscount">Percentual de Desconto (%)</Label>
+                  <Label htmlFor="name">Nome do Atleta*</Label>
                   <Input
-                    id="scholarshipDiscount"
-                    name="scholarshipDiscount"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={student.scholarshipDiscount || 0}
-                    onChange={(e) => {
-                      const value = Number(e.target.value);
-                      setStudent(prev => ({
-                        ...prev,
-                        scholarshipDiscount: value
-                      }));
-                    }}
-                    placeholder="0"
+                    id="name"
+                    name="name"
+                    value={student.name}
+                    onChange={handleChange}
+                    placeholder="Nome do atleta"
+                    className="w-full"
                   />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="birthDate">Data de Nasc.*</Label>
+                  <Input
+                    id="birthDate"
+                    name="birthDate"
+                    type="date"
+                    value={student.birthDate ? student.birthDate.split('T')[0] : ""}
+                    onChange={handleDateChange}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="rg">RG</Label>
+                  <Input
+                    id="rg"
+                    name="rg"
+                    value={student.rg}
+                    onChange={handleChange}
+                    placeholder="RG"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input
+                    id="cpf"
+                    name="cpf"
+                    value={student.cpf}
+                    onChange={handleChange}
+                    placeholder="CPF"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="category">Categoria*</Label>
+                  <Select
+                    value={student.category}
+                    onValueChange={(value) => handleSelectChange("category", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="joinDate">Início em</Label>
+                  <Input
+                    id="joinDate"
+                    name="joinDate"
+                    type="date"
+                    value={student.joinDate ? (
+                      /^\d{2}\/\d{2}\/\d{4}$/.test(student.joinDate)
+                        ? new Date(student.joinDate.split("/").reverse().join("-")).toISOString().split("T")[0]
+                        : student.joinDate.split("T")[0]
+                    ) : ""}
+                    onChange={e => setStudent(prev => ({ ...prev, joinDate: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="polo">Polo</Label>
+                  <Select
+                    value={student.polo}
+                    onValueChange={(value) => handleSelectChange("polo", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o polo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {POLOS.map((polo) => (
+                        <SelectItem key={polo} value={polo}>
+                          {polo}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Situação</Label>
+                  <Select
+                    value={student.status}
+                    onValueChange={(value) => handleSelectChange("status", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STATUS_OPTIONS.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleName">Nome do Responsável</Label>
+                  <Input
+                    id="responsibleName"
+                    name="responsibleName"
+                    value={student.responsibleName}
+                    onChange={handleChange}
+                    placeholder="Nome do responsável"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="responsibleCpf">CPF do Responsável</Label>
+                  <Input
+                    id="responsibleCpf"
+                    name="responsibleCpf"
+                    value={student.responsibleCpf}
+                    onChange={handleChange}
+                    placeholder="CPF do responsável"
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="address">Endereço</Label>
+                  <Input
+                    id="address"
+                    name="address"
+                    value={student.address}
+                    onChange={handleChange}
+                    placeholder="Endereço"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="position">Posição*</Label>
+                  <Select
+                    value={student.position}
+                    onValueChange={(value) => handleSelectChange("position", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a posição" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {POSITIONS.map((position) => (
+                        <SelectItem key={position} value={position}>
+                          {position}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Whatsapp</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    value={student.phone}
+                    onChange={handleChange}
+                    placeholder="(xx) xxxxx-xxxx"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="space-y-2 flex items-center gap-2">
+                  <Label htmlFor="hasScholarship" className="whitespace-nowrap">É Bolsista?</Label>
+                  <Switch
+                    id="hasScholarship"
+                    checked={student.hasScholarship}
+                    onCheckedChange={(checked) => setStudent((prev) => ({ ...prev, hasScholarship: checked, scholarshipDiscount: checked ? prev.scholarshipDiscount : 0 }))}
+                  />
+                </div>
+                {student.hasScholarship && (
+                  <div className="space-y-2">
+                    <Label htmlFor="scholarshipDiscount">Valor do Desconto (R$)</Label>
+                    <Input
+                      id="scholarshipDiscount"
+                      name="scholarshipDiscount"
+                      type="number"
+                      value={student.scholarshipDiscount || ''} // Mostrar string vazia se for 0 ou undefined para melhor UX no input
+                      onChange={(e) => setStudent(prev => ({...prev, scholarshipDiscount: parseFloat(e.target.value) || 0}))}
+                      placeholder="Ex: 40,00"
+                      step="0.01"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-          <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleClose}
-            >
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-football-green hover:bg-football-dark-green"
-            >
-              Salvar
-            </Button>
-          </DialogFooter>
-        </form>
+            <DialogFooter className="sticky bottom-0 bg-background py-4 mt-4 z-10">
+              <Button type="button" variant="outline" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit">Salvar</Button>
+            </DialogFooter>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

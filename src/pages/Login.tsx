@@ -54,7 +54,7 @@ const Login = () => {
 
       if (signInError) {
         console.error("Erro na autenticação Supabase:", signInError);
-        toast({
+        toast({ 
           variant: "destructive",
           title: "Erro de Login",
           description: signInError.message === "Invalid login credentials" 
@@ -82,8 +82,8 @@ const Login = () => {
           });
           setIsLoading(false);
           return;
-        }
-
+      }
+      
         if (userProfile) {
           const userDataForContext: User = {
             id: userProfile.id,
@@ -107,7 +107,7 @@ const Login = () => {
           });
         }
       } else {
-        toast({
+        toast({ 
           variant: "destructive",
           title: "Erro de Login",
           description: "Falha no login. Verifique suas credenciais e tente novamente.",
@@ -115,7 +115,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Erro inesperado no processo de login:", error);
-      toast({
+      toast({ 
         variant: "destructive",
         title: "Erro",
         description: "Ocorreu um erro inesperado. Tente novamente mais tarde.",
@@ -166,29 +166,29 @@ const Login = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input
+            <Input
                 id="email"
-                type="email"
+              type="email"
                 placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                disabled={isLoading}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              disabled={isLoading}
                 className="h-12"
-              />
+            />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
+            <Input
                 id="password"
-                type="password"
+              type="password"
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              disabled={isLoading}
                 className="h-12"
-              />
+            />
             </div>
             <Button 
               type="submit" 

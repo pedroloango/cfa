@@ -36,6 +36,25 @@ interface TaxaInscricaoFormProps {
 
 const CATEGORIES = ["Sub-7", "Sub-9", "Sub-11", "Sub-13", "Sub-15", "Sub-17"];
 
+// Função para converter "R$ 180,00" para 180.00
+const parseCurrency = (value: string): number => {
+  const numericValue = parseFloat(
+    value
+      .replace("R$", "")
+      .replace(/\./g, "") // Remover pontos de milhar, se houver (escapar o ponto para regex)
+      .replace(",", ".") // Substituir vírgula decimal por ponto
+      .trim()
+  );
+  return isNaN(numericValue) ? 0 : numericValue;
+};
+
+// Função para converter 140.00 para "R$ 140,00"
+const formatCurrency = (value: number): string => {
+  // Arredondar para duas casas decimais para evitar problemas com números como 139.99999999999997
+  const roundedValue = Math.round(value * 100) / 100;
+  return `R$ ${roundedValue.toFixed(2).replace(".", ",")}`;
+};
+
 // Definir uma interface para o estado do formulário interno
 interface InternalFormData {
   description: string;
@@ -177,16 +196,29 @@ export function TaxaInscricaoForm({
     }
 
     const paymentsToCreate: Array<Omit<Payment, 'id' | 'student' | 'category' | 'paymentType' | 'status' | 'paymentMethod'> & { studentId: number, paymentTypeId: number, status: Payment['status'] }> = [];
+    
+    const baseValueNumeric = parseCurrency(formData.value);
+
     selectedStudentIds.forEach(studentId => {
+      const student = studentsList.find(s => s.id === studentId);
+      let finalValueNumeric = baseValueNumeric;
+
+      if (student && student.hasScholarship && typeof student.scholarshipDiscount === 'number' && student.scholarshipDiscount > 0) {
+        finalValueNumeric = baseValueNumeric - student.scholarshipDiscount;
+        if (finalValueNumeric < 0) {
+          finalValueNumeric = 0; // Não permitir valor negativo
+        }
+      }
+
       paymentsToCreate.push({
         studentId,
         description: formData.description,
-        paymentTypeId: selectedPaymentTypeId,
-        value: formData.value,
+        paymentTypeId: selectedPaymentTypeId, // Assumindo que selectedPaymentTypeId não será null aqui devido à validação anterior
+        value: formatCurrency(finalValueNumeric), // Usar o valor com desconto
         dueDate: formData.dueDate,
         month: formData.month,
         year: formData.year,
-        status: "Pendente", // Status fixo como Pendente
+        status: "Pendente", 
       });
     });
 

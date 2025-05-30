@@ -16,6 +16,7 @@ import Dashboard from "./pages/Dashboard";
 import Receitas from "./pages/Receitas";
 import Login from "./pages/Login";
 import Atividades from "./pages/Atividades";
+import Despesas from "./pages/Despesas";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/receitas" element={<Receitas />} />
+          <Route path="/despesas" element={<Despesas />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

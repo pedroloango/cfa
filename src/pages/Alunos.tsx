@@ -312,10 +312,9 @@ const Alunos = () => {
                 <TableHead>Situação</TableHead>
                 <TableHead className="hidden md:table-cell">Nome do Responsável</TableHead>
                 <TableHead className="hidden md:table-cell">CPF do Responsável</TableHead>
-                <TableHead className="hidden md:table-cell">Whatsapp</TableHead>
                 <TableHead className="hidden md:table-cell">Endereço</TableHead>
                 <TableHead>Posição</TableHead>
-                <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                <TableHead className="hidden md:table-cell">Whatsapp do Responsável</TableHead>
                 <TableHead className="w-[80px]">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -346,7 +345,6 @@ const Alunos = () => {
                     </TableCell>
                     <TableCell className="hidden md:table-cell">{student.responsibleName || 'N/A'}</TableCell>
                     <TableCell className="hidden md:table-cell">{student.responsibleCpf || 'N/A'}</TableCell>
-                    <TableCell className="hidden md:table-cell">{student.whatsapp || 'N/A'}</TableCell>
                     <TableCell className="hidden md:table-cell">{student.address || 'N/A'}</TableCell>
                     <TableCell>{student.position || 'N/A'}</TableCell>
                     <TableCell className="hidden md:table-cell">{student.phone || 'N/A'}</TableCell>
@@ -379,7 +377,7 @@ const Alunos = () => {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={15} className="text-center py-6 text-muted-foreground">
+                  <TableCell colSpan={14} className="text-center py-6 text-muted-foreground">
                     Nenhum aluno encontrado.
                   </TableCell>
                 </TableRow>

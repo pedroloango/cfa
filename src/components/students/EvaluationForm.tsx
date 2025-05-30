@@ -123,7 +123,7 @@ export function EvaluationForm({
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-y-auto pr-6 pl-1 py-4 grid gap-4">
-          <div className="space-y-2">
+            <div className="space-y-2">
             <Label>Categoria</Label>
             <Select
               value={categoryFilter}
@@ -260,11 +260,11 @@ export function EvaluationForm({
               rows={4}
             />
             </div>
-        </div>
-        <DialogFooter>
+          </div>
+          <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancelar</Button>
           <Button onClick={handleSave}>Salvar Avaliação</Button>
-        </DialogFooter>
+          </DialogFooter>
       </DialogContent>
     </Dialog>
   );
